@@ -30,6 +30,10 @@ promising_users = PickleDB('promising_users.json')
 
 
 
+TRICK_LOCATIONS = [
+    "indiana", # contains "india"
+    "indianapolis"# ALSO CONTAINS INDIA! >:(
+]
 
 IDEAL_LOCATIONS = []
 with open("ideal_locations.json") as f:
@@ -38,6 +42,9 @@ with open("ideal_locations.json") as f:
 
 def is_location_ok(location):
     location = location.lower()
+    for tl in TRICK_LOCATIONS:
+        if tl in location: return False # Bad location, skip
+
     for l in IDEAL_LOCATIONS:
         if l in location:
             return True
