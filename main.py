@@ -52,7 +52,8 @@ def get_contributors(repo):
     owner = repo['owner']['login']
     name = repo['name']
     key = f"{owner}/{name}"
-    if seen_repos[key]:
+    if seen_repos.get(key):
+        print("ALREADY SEEN REPO: (skipping)", key)
         return []
 
     contributors_response = httpx.get(
@@ -113,20 +114,21 @@ def main():
     repos = find_repos()
     users = []
     for i,repo in enumerate(repos):
-        print(f"Repos: {(100*i)/len(repos):.2f}% done")
+        print(f"Gathering Contributors... {(100*i)/len(repos):.2f}% done")
         users = users + get_contributors(repo)
         time.sleep(REQUESTS_PER_SECOND)
     
     for i,u in enumerate(users):
-        print(f"Users: {(100*i)/len(users):.2f}% done")
+        print(f"Analyzing Users... {(100*i)/len(users):.2f}% done")
         info = get_user_info(u)
         # time.sleep(REQUESTS_PER_SECOND)
 
         if info and info["location"] and is_location_ok(info["location"]):
-            print("FOUND:", info)
+            print("FOUND USER:", info["login"], info["location"])
             promising_users.set(info["login"], True)
             promising_users.save()
 
 
-main()
+for i in range(3):
+    main()
 
