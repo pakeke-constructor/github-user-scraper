@@ -2,6 +2,7 @@
 
 import httpx
 import backoff
+import random
 import time
 import os
 import json
@@ -50,6 +51,9 @@ def is_location_ok(location):
 def get_contributors(repo):
     owner = repo['owner']['login']
     name = repo['name']
+    key = f"{owner}/{name}"
+    if seen_repos[key]:
+        return []
 
     contributors_response = httpx.get(
         f"https://api.github.com/repos/{owner}/{name}/contributors",
@@ -57,17 +61,27 @@ def get_contributors(repo):
         params={'per_page': 100}
     )
     contributors = contributors_response.json()
-    
+
+    seen_repos.set(key,True)
+    seen_repos.save()
+
     return list(map(lambda cont: cont["login"], contributors))
 
 
 
 @backoff.on_exception(backoff.expo, httpx.RequestError, max_time=60)
 def find_repos():
+    # ignore the top few most popular pages of godot repos; we dont want to spend ages searching.
+    random_page = 3 + random.randint(3,100)
     response = httpx.get(
         'https://api.github.com/search/repositories',
         headers=HEADERS,
-        params={'q': 'language:GDScript', 'per_page': 8}
+        params={
+            'q': 'language:GDScript', 
+            'per_page': 10,
+            'page': random_page,
+            'sort': 'stars'
+        }
     )
 
     repos = response.json()['items']
@@ -78,8 +92,12 @@ def find_repos():
 
 @backoff.on_exception(backoff.expo, httpx.RequestError, max_time=60)
 def get_user_info(username):
+    if seen_users.get(username):
+        return None
+
     response = httpx.get(f'https://api.github.com/users/{username}', headers=HEADERS)
     user = response.json()
+    seen_users.set(username,True); seen_users.save()
     # {
     #     'login': user['login'],
     #     'location': user.get('location'),
@@ -96,24 +114,18 @@ def main():
     users = []
     for i,repo in enumerate(repos):
         print(f"Repos: {(100*i)/len(repos):.2f}% done")
-        if seen_repos.get(repo):
-            continue
-
-        seen_repos.set(repo,True); seen_repos.save()
         users = users + get_contributors(repo)
         time.sleep(REQUESTS_PER_SECOND)
     
     for i,u in enumerate(users):
         print(f"Users: {(100*i)/len(users):.2f}% done")
-        if seen_users.get(u):
-            continue
-        seen_users.set(u,True); seen_users.save()
         info = get_user_info(u)
-        time.sleep(REQUESTS_PER_SECOND)
+        # time.sleep(REQUESTS_PER_SECOND)
 
-        print(info)
-        if is_location_ok(info["location"]):
+        if info and info["location"] and is_location_ok(info["location"]):
+            print("FOUND:", info)
             promising_users.set(info["login"], True)
+            promising_users.save()
 
 
 main()
