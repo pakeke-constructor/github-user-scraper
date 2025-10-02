@@ -123,14 +123,14 @@ def main():
     for i,repo in enumerate(repos):
         print(f"Gathering Contributors... {(100*i)/len(repos):.2f}% done")
         users = users + get_contributors(repo)
-        time.sleep(REQUESTS_PER_SECOND)
+        # time.sleep(REQUESTS_PER_SECOND)
     
     for i,u in enumerate(users):
         print(f"Analyzing Users... {(100*i)/len(users):.2f}% done")
         info = get_user_info(u)
         # time.sleep(REQUESTS_PER_SECOND)
 
-        if info and info["location"] and is_location_ok(info["location"]):
+        if info and info.get("location") and is_location_ok(info["location"]):
             print("FOUND USER:", info["login"], info["location"])
             promising_users.set(info["login"], True)
             promising_users.save()
