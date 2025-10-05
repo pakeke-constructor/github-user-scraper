@@ -6,8 +6,10 @@ import random
 import time
 import os
 import json
+from openai import OpenAI
 from dotenv import load_dotenv
 from pickledb import PickleDB
+
 
 
 load_dotenv()
@@ -136,6 +138,4 @@ def main():
             promising_users.save()
 
 
-for i in range(3):
-    main()
 
