@@ -102,8 +102,8 @@ def find_repos():
 
 @backoff.on_exception(backoff.expo, httpx.RequestError, max_time=60)
 def get_user_info(username):
-    if seen_users.get(username):
-        return None
+    # if seen_users.get(username):
+    #     return None
 
     response = httpx.get(f'https://api.github.com/users/{username}', headers=HEADERS)
     user = response.json()
@@ -137,5 +137,28 @@ def main():
             promising_users.set(info["login"], True)
             promising_users.save()
 
+
+
+def update_country_count():
+    cc = {}
+    d={}
+    with open("promising_users.json","r") as f:
+        d = json.loads(f.read())
+        for u,t in d.items():
+            data = get_user_info(u)
+            loc = data["location"].strip().lower()
+            d[u] = loc
+            cc[loc] = cc.get(loc,0)+1
+
+    with open("promising_users.json","w") as f:
+        f.write(json.dumps(d))
+
+    with open("seen_country_count.json","w+") as f:
+        f.write(json.dumps(cc,indent=4))
+
+
+
+for i in range(5):
+    main()
 
 
