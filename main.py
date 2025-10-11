@@ -87,7 +87,9 @@ def find_repos():
         'https://api.github.com/search/repositories',
         headers=HEADERS,
         params={
-            'q': 'language:GDScript', 
+            # 'q': 'language:GDScript', 
+            # 'q': 'topic:unity3d', 
+            'q': 'topic:gamedev', 
             'per_page': 10,
             'page': random_page,
             'sort': 'stars'
@@ -158,7 +160,7 @@ def update_country_count():
 
 
 
-for i in range(5):
+for i in range(2):
     main()
 
 
